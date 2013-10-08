@@ -58,11 +58,11 @@ var extended = Playlist{
 }
 
 var simple = Playlist{
-  Track{Time: 0, Title: "", Path: "Alternative\\everclear_SMFTA.mp3"},
-  Track{Time: 0, Title: "", Path: "Comedy/Weird_Al_Everything_You_Know_Is_Wrong.mp3"},
-  Track{Time: 0, Title: "", Path: "Weird_Al_This_Is_The_Life.mp3"},
-  Track{Time: 0, Title: "", Path: "http://www.site.com/~user/gump.mp3"},
-  Track{Time: 0, Title: "", Path: "http://www.site.com:8000/listen.pls"},
+  Track{Time: -1, Title: "", Path: "Alternative\\everclear_SMFTA.mp3"},
+  Track{Time: -1, Title: "", Path: "Comedy/Weird_Al_Everything_You_Know_Is_Wrong.mp3"},
+  Track{Time: -1, Title: "", Path: "Weird_Al_This_Is_The_Life.mp3"},
+  Track{Time: -1, Title: "", Path: "http://www.site.com/~user/gump.mp3"},
+  Track{Time: -1, Title: "", Path: "http://www.site.com:8000/listen.pls"},
 }
 
 func assertPlaylist(t *testing.T, a, b Playlist) {

@@ -62,7 +62,7 @@ func Parse(r io.Reader) (Playlist, error) {
     line = line[:len(line)-1]
 
     if len(line) > 0 && line[0] != '#' {
-      pl = append(pl, Track{Path: line})
+      pl = append(pl, Track{Path: line, Title: "", Time: -1})
       continue
     }
 
