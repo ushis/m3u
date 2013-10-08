@@ -28,7 +28,6 @@ package m3u
 
 import (
   "bufio"
-  "errors"
   "fmt"
   "io"
   "strconv"
@@ -70,7 +69,7 @@ func Parse(r io.Reader) (Playlist, error) {
       i := strings.Index(line[8:], ",")
 
       if i < 0 {
-        return pl, errors.New(fmt.Sprintf("unexpected line: %q", line))
+        return pl, fmt.Errorf("unexpected line: %q", line)
       }
       time, err := strconv.ParseInt(line[8:i+8], 10, 64)
 
@@ -90,7 +89,7 @@ func Parse(r io.Reader) (Playlist, error) {
 // Writes the playlist to a writer in the extended m3u format. Returns the
 // number of written bytes.
 func (pl Playlist) WriteTo(w io.Writer) (n int, err error) {
-  if n, err = io.WriteString(w, "#EXTM3U\n"); err != nil {
+  if n, err = fmt.Fprintln(w, "#EXTM3U"); err != nil {
     return
   }
 
