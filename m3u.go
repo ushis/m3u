@@ -71,11 +71,12 @@ func Parse(r io.Reader) (Playlist, error) {
       if i < 0 {
         return pl, fmt.Errorf("unexpected line: %q", line)
       }
-      time, err := strconv.ParseInt(line[8:i+8], 10, 64)
+      ftime, err := strconv.ParseFloat(line[8:i+8], 64)
 
       if err != nil {
         return pl, err
       }
+      time := int64(ftime)
       path, err := br.ReadString('\n')
 
       if err != nil {
