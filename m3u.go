@@ -20,18 +20,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-// This package implements a fault tolerant m3u parser and functions to write
-// simple and extended m3u files.
-//
-// The spec can be found at http://www.scvi.net/pls.htm
 package m3u
 
 import (
-  "bufio"
-  "fmt"
-  "io"
-  "strconv"
-  "strings"
+	"bufio"
+	"bytes"
+	"fmt"
+	"io"
+	"strconv"
+	"strings"
 )
 
 // Represents a list of tracks.
@@ -39,89 +36,98 @@ type Playlist []Track
 
 // Represents a single track.
 type Track struct {
-  Path  string // path to the file
-  Title string // title of the track
-  Time  int64  // duration of the track
+	Path  string // path to the file
+	Title string // title of the track
+	Time  int64  // duration of the track
 }
 
 // Parses simple and extended m3u files. Returns the playlist.
 func Parse(r io.Reader) (Playlist, error) {
-  br := bufio.NewReader(r)
-  pl := Playlist{}
+	scanner := bufio.NewScanner(r)
+	pl := Playlist{}
 
-  for {
-    line, err := br.ReadString('\n')
+	for scanner.Scan() {
+		line := scanner.Text()
 
-    if err != nil {
-      if err == io.EOF {
-        return pl, nil
-      }
-      return pl, err
-    }
-    line = line[:len(line)-1]
+		if len(line) > 0 && line[0] != '#' {
+			pl = append(pl, Track{Path: line, Title: "", Time: -1})
+			continue
+		}
 
-    if len(line) > 0 && line[0] != '#' {
-      pl = append(pl, Track{Path: line, Title: "", Time: -1})
-      continue
-    }
+		if len(line) > 8 && line[:8] == "#EXTINF:" {
+			i := strings.Index(line[8:], ",")
 
-    if len(line) > 8 && line[:8] == "#EXTINF:" {
-      i := strings.Index(line[8:], ",")
+			if i < 0 {
+				return pl, fmt.Errorf("unexpected line: %q", line)
+			}
+			ftime, err := strconv.ParseFloat(line[8:i+8], 64)
 
-      if i < 0 {
-        return pl, fmt.Errorf("unexpected line: %q", line)
-      }
-      ftime, err := strconv.ParseFloat(line[8:i+8], 64)
+			if err != nil {
+				return pl, err
+			}
+			time := int64(ftime)
+			scanner.Scan()
+			path := scanner.Text()
 
-      if err != nil {
-        return pl, err
-      }
-      time := int64(ftime)
-      path, err := br.ReadString('\n')
-
-      if err != nil {
-        return pl, err
-      }
-      pl = append(pl, Track{Path: path[:len(path)-1], Title: line[i+9:], Time: time})
-    }
-  }
+			if err := scanner.Err(); err != nil {
+				return pl, err
+			}
+			pl = append(pl, Track{Path: path, Title: line[i+9:], Time: time})
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		return pl, err
+	}
+	return pl, nil
 }
 
 // Writes the playlist to a writer in the extended m3u format. Returns the
 // number of written bytes.
-func (pl Playlist) WriteTo(w io.Writer) (n int, err error) {
-  if n, err = fmt.Fprintln(w, "#EXTM3U"); err != nil {
-    return
-  }
+func (pl Playlist) WriteTo(w io.Writer) (int64, error) {
+	var buf bytes.Buffer
+	buf.WriteString("#EXTM3U\n")
 
-  for _, t := range pl {
-    time := t.Time
+	for _, t := range pl {
+		time := t.Time
 
-    if time < 1 {
-      time = -1
-    }
-    m, err := fmt.Fprintf(w, "#EXTINF:%d,%s\n%s\n", time, t.Title, t.Path)
+		if time < 1 {
+			time = -1
+		}
+		var b bytes.Buffer
+		strconv.AppendInt(b.Bytes(), time, 10)
+		buf.WriteString("#EXTINF:")
+		buf.Write(b.Bytes())
+		buf.WriteString(",")
+		buf.WriteString(t.Title)
+		buf.WriteString("\n")
+		buf.WriteString(t.Path)
+		buf.WriteString("\n")
+	}
 
-    if err != nil {
-      return n, err
-    }
-    n += m
-  }
-  return
+	// Write the buffer to the output.
+	n, err := buf.WriteTo(w)
+	if err != nil {
+		return 0, err
+	}
+
+	return n, nil
 }
 
 // Writes the playlist to a writer in the simple m3u format. Returns the number
 // of written bytes.
-func (pl Playlist) WriteSimpleTo(w io.Writer) (n int, err error) {
-  n = 0
+func (pl Playlist) WriteSimpleTo(w io.Writer) (int64, error) {
+	var buf bytes.Buffer
 
-  for _, t := range pl {
-    m, err := fmt.Fprintln(w, t.Path)
+	for _, t := range pl {
+		buf.WriteString(t.Path)
+		buf.WriteString("\n")
+	}
 
-    if err != nil {
-      return n, err
-    }
-    n += m
-  }
-  return
+	// Write the buffer to the output.
+	n, err := buf.WriteTo(w)
+	if err != nil {
+		return 0, err
+	}
+
+	return n, nil
 }

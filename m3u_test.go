@@ -23,102 +23,102 @@
 package m3u
 
 import (
-  "bytes"
-  "io"
-  "os"
-  "testing"
+	"bytes"
+	"io"
+	"os"
+	"testing"
 )
 
 var extended = Playlist{
-  Track{
-    Path:  "Alternative\\everclear_SMFTA.mp3",
-    Title: "Everclear - So Much For The Afterglow",
-    Time:  233,
-  },
-  Track{
-    Path:  "Comedy/Weird_Al_Everything_You_Know_Is_Wrong.mp3",
-    Title: "",
-    Time:  227,
-  },
-  Track{
-    Path:  "Weird_Al_This_Is_The_Life.mp3",
-    Title: "Weird Al Yankovic - This is the Life",
-    Time:  187,
-  },
-  Track{
-    Path:  "http://www.site.com/~user/gump.mp3",
-    Title: "Weird Al: Bad Hair Day - Gump",
-    Time:  129,
-  },
-  Track{
-    Path:  "http://www.site.com:8000/listen.pls",
-    Title: "My Cool Stream",
-    Time:  -1,
-  },
+	Track{
+		Path:  "Alternative\\everclear_SMFTA.mp3",
+		Title: "Everclear - So Much For The Afterglow",
+		Time:  233,
+	},
+	Track{
+		Path:  "Comedy/Weird_Al_Everything_You_Know_Is_Wrong.mp3",
+		Title: "",
+		Time:  227,
+	},
+	Track{
+		Path:  "Weird_Al_This_Is_The_Life.mp3",
+		Title: "Weird Al Yankovic - This is the Life",
+		Time:  187,
+	},
+	Track{
+		Path:  "http://www.site.com/~user/gump.mp3",
+		Title: "Weird Al: Bad Hair Day - Gump",
+		Time:  129,
+	},
+	Track{
+		Path:  "http://www.site.com:8000/listen.pls",
+		Title: "My Cool Stream",
+		Time:  -1,
+	},
 }
 
 var simple = Playlist{
-  Track{Time: -1, Title: "", Path: "Alternative\\everclear_SMFTA.mp3"},
-  Track{Time: -1, Title: "", Path: "Comedy/Weird_Al_Everything_You_Know_Is_Wrong.mp3"},
-  Track{Time: -1, Title: "", Path: "Weird_Al_This_Is_The_Life.mp3"},
-  Track{Time: -1, Title: "", Path: "http://www.site.com/~user/gump.mp3"},
-  Track{Time: -1, Title: "", Path: "http://www.site.com:8000/listen.pls"},
+	Track{Time: -1, Title: "", Path: "Alternative\\everclear_SMFTA.mp3"},
+	Track{Time: -1, Title: "", Path: "Comedy/Weird_Al_Everything_You_Know_Is_Wrong.mp3"},
+	Track{Time: -1, Title: "", Path: "Weird_Al_This_Is_The_Life.mp3"},
+	Track{Time: -1, Title: "", Path: "http://www.site.com/~user/gump.mp3"},
+	Track{Time: -1, Title: "", Path: "http://www.site.com:8000/listen.pls"},
 }
 
 func assertPlaylist(t *testing.T, a, b Playlist) {
-  if len(a) != len(b) {
-    t.Fatalf("Result:   %v\nExpected: %v\n", a, b)
-  }
+	if len(a) != len(b) {
+		t.Fatalf("Result:   %v\nExpected: %v\n", a, b)
+	}
 
-  for i, _ := range a {
-    if a[i].Path != b[i].Path || a[i].Title != b[i].Title || a[i].Time != b[i].Time {
-      t.Fatalf("\nResult:   %v\nExpected: %v\n", a, b)
-    }
-  }
+	for i := range a {
+		if a[i].Path != b[i].Path || a[i].Title != b[i].Title || a[i].Time != b[i].Time {
+			t.Fatalf("\nResult:   %v\nExpected: %v\n", a, b)
+		}
+	}
 }
 
 func parse(t *testing.T, path string) Playlist {
-  f, err := os.Open(path)
+	f, err := os.Open(path)
 
-  if err != nil {
-    t.Fatal(err)
-  }
-  defer f.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
 
-  pl, err := Parse(f)
+	pl, err := Parse(f)
 
-  if err != nil {
-    t.Fatal(err)
-  }
-  return pl
+	if err != nil {
+		t.Fatal(err)
+	}
+	return pl
 }
 
-func writeAndParse(t *testing.T, w func(io.Writer) (int, error)) Playlist {
-  var buf bytes.Buffer
+func writeAndParse(t *testing.T, w func(io.Writer) (int64, error)) Playlist {
+	var buf bytes.Buffer
 
-  if _, err := w(&buf); err != nil {
-    t.Fatal(err)
-  }
-  pl, err := Parse(&buf)
+	if _, err := w(&buf); err != nil {
+		t.Fatal(err)
+	}
+	pl, err := Parse(&buf)
 
-  if err != nil {
-    t.Fatal(err)
-  }
-  return pl
+	if err != nil {
+		t.Fatal(err)
+	}
+	return pl
 }
 
 func TestParse(t *testing.T) {
-  assertPlaylist(t, parse(t, "testdata/extended.m3u"), extended)
+	assertPlaylist(t, parse(t, "testdata/extended.m3u"), extended)
 }
 
 func TestParseSimple(t *testing.T) {
-  assertPlaylist(t, parse(t, "testdata/simple.m3u"), simple)
+	assertPlaylist(t, parse(t, "testdata/simple.m3u"), simple)
 }
 
 func TestWriteTo(t *testing.T) {
-  assertPlaylist(t, writeAndParse(t, extended.WriteTo), extended)
+	assertPlaylist(t, writeAndParse(t, extended.WriteTo), extended)
 }
 
 func TestWriteSimpleTo(t *testing.T) {
-  assertPlaylist(t, writeAndParse(t, extended.WriteSimpleTo), simple)
+	assertPlaylist(t, writeAndParse(t, extended.WriteSimpleTo), simple)
 }
